@@ -1,0 +1,36 @@
+#include <iostream>
+#include <cstring>
+#include "solver.hpp"
+
+int main(int argc, char** argv) {
+    std::string method = "dpll";
+    std::string heuristic = "jw";
+    std::string input;
+    unsigned seed = 0;
+    bool stats_flag = false;
+    for (int i = 1; i < argc; ++i) {
+        if (std::strncmp(argv[i], "--method=", 9) == 0) method = argv[i] + 9;
+        else if (std::strncmp(argv[i], "--heuristic=", 12) == 0) heuristic = argv[i] + 12;
+        else if (std::strncmp(argv[i], "--input=", 8) == 0) input = argv[i] + 8;
+        else if (std::strncmp(argv[i], "--seed=", 7) == 0) seed = std::stoul(argv[i] + 7);
+        else if (std::strcmp(argv[i], "--stats") == 0) stats_flag = true;
+    }
+    if (input.empty()) {
+        std::cerr << "input file missing\n";
+        return 1;
+    }
+    Solver s;
+    if (seed) s.rng.seed(seed);
+    s.load_dimacs(input);
+    Stats st;
+    bool sat;
+    if (method == "resolution") sat = s.solve_resolution(st);
+    else if (method == "dp") sat = s.solve_dp(st);
+    else sat = s.solve_dpll(heuristic, st);
+    std::cout << (sat ? "SAT\n" : "UNSAT\n");
+    if (stats_flag)
+        std::cout << "time_sec=" << st.time_sec
+                  << ",backtracks=" << st.backtracks
+                  << ",resolvents=" << st.resolvents << '\n';
+    return 0;
+}
